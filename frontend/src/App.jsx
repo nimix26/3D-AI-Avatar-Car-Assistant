@@ -3,16 +3,25 @@ import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
 import { Experience } from "./components/Experience";
 import { UI } from "./components/UI";
+import Screen from "./components/HomeScreen/Screen"
+
+
+
 
 function App() {
   return (
     <>
       <Loader />
-      <Leva hidden />
+      <Leva hidden/>
       <UI />
       <Canvas shadows camera={{ position: [0, 0, 1], fov: 30 }}>
         <Experience />
       </Canvas>
+      
+      
+
+      
+      
     </>
   );
 }
