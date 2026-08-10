@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -6,6 +5,13 @@ import { promises as fs } from "fs";
 import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
+import { exec } from "child_process";
+
+// --- NEW IMPORTS ---
+import mongoose from 'mongoose';
+import authRoutes from './routes/authRoutes.js';
+import chatRoutes from './routes/chatRoutes.js'; // We will create this next
+import authMiddleware from './middleware/authMiddleware.js'; // Our new auth middleware
 
 dotenv.config();
 
@@ -21,8 +27,17 @@ app.use(express.json());
 app.use(cors());
 const port = 3000;
 
+
+// --- NEW: CONNECT TO MONGODB ---
+// Add your MONGODB_URI to your .env file
+// e.g., MONGODB_URI="mongodb://localhost:27017/ai_chatbot_db"
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB Connected Successfully."))
+  .catch(err => console.error("MongoDB Connection Error:", err));
+
 // Path to the Rhubarb executable with complete path
-const rhubarbPath = "D:\\KKY_Brothers\\Codes\\Advanced_ML_Projects\\AI Avatar Car Assistant\\backend-gemini\\bin\\Rhubarb-Lip-Sync-1.14.0-Windows\\rhubarb.exe";
+// const rhubarbPath = "D:\\KKY_Brothers\\Codes\\Advanced_ML_Projects\\AI Avatar Car Assistant\\backend-gemini\\bin\\Rhubarb-Lip-Sync-1.14.0-Windows\\rhubarb.exe";
+const rhubarbPath= "C:\\Users\\ACER\\Desktop\\New folder\\AI-Avatar-Car-Assistant\\backend-gemini\\bin\\Rhubarb-Lip-Sync-1.14.0-Windows\\rhubarb.exe";
 
 const ensureDirectoryExists = async (directory) => {
   try {
@@ -35,6 +50,9 @@ const ensureDirectoryExists = async (directory) => {
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
+
+app.use("/api/auth",authRoutes);
+app.use("/api/chat-history",chatRoutes);
 
 app.get("/voices", async (req, res) => {
   try {
@@ -157,7 +175,9 @@ const createFallbackFiles = async () => {
   }
 };
 
-app.post("/chat", async (req, res) => {
+app.post("/api/chat",authMiddleware, async (req, res) => {
+  console.log(`Chat request from user ${req.user.email}`);
+  
   try {
     await ensureDirectoryExists("audios");
     await createFallbackFiles();
